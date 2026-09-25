@@ -135,7 +135,7 @@ with tab4:
     per_trade=capital*risk_pct/100; total_risk=max_trades*per_trade
     r1.metric("₹ risk / trade",money(per_trade)); r2.metric("Portfolio cap",money(capital*max_portfolio_risk/100)); r3.metric("Max quota risk",money(total_risk))
     if total_risk>capital*max_portfolio_risk/100: st.warning("Your maximum number of simultaneous plans can exceed the portfolio-risk cap.")
-    st.download_button("📥 Download full Nifty 100 scan",scan["csv"],"nse100_full_scan.csv","text/csv",use_container_width=True)
+    st.download_button("📥 Download full Nifty 100 scan",scan.get("csv","No scan data available.\n"),"nse100_full_scan.csv","text/csv",use_container_width=True)
     st.markdown(f"<div class='card'><b>Data architecture</b><br>Universe: Nifty 100 · Price/fundamental/news: Yahoo Finance/yfinance research feed.<br>Current Nifty 100 is reviewed periodically; this build keeps announced future changes separate from the current scan window.<br><br><b>Important:</b> Manual execution only. Verify live price, liquidity, order status and stop placement at your broker.</div>",unsafe_allow_html=True)
 
 st.divider()

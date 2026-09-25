@@ -9,7 +9,7 @@ import yfinance as yf
 # Nifty 100 universe used for the current scan window (before the 30-Sep-2026
 # announced rebalance becomes effective). NSE says Nifty 100 is the top 100
 # companies by full market capitalisation from Nifty 500.
-NIFTY100 = ['ABB','ADANIENSOL','ADANIENT','ADANIGREEN','ADANIPORTS','ADANIPOWER','AMBUJACEM','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJAJFINSV','BAJAJHLDNG','BAJFINANCE','BANKBARODA','BEL','BHARTIARTL','BOSCHLTD','BPCL','BRITANNIA','CANBK','CGPOWER','CHOLAFIN','CIPLA','COALINDIA','CUMMINSIND','DIVISLAB','DLF','DMART','DRREDDY','EICHERMOT','ENRIN','ETERNAL','GAIL','GODREJCP','GRASIM','HAL','HCLTECH','HDFCAMC','HDFCBANK','HDFCLIFE','HINDALCO','HINDUNILVR','HINDZINC','HYUNDAI','ICICIBANK','INDHOTEL','INDIGO','INFY','IOC','IRFC','ITC','JINDALSTEL','JIOFIN','JSWSTEEL','KOTAKBANK','LODHA','LT','LTIM','M&M','MARUTI','MAXHEALTH','MAZDOCK','MOTHERSON','MUTHOOTFIN','NESTLEIND','NTPC','ONGC','PFC','PIDILITIND','PNB','POWERGRID','RECLTD','RELIANCE','SBILIFE','SBIN','SHREECEM','SHRIRAMFIN','SIEMENS','SOLARINDS','SUNPHARMA','TATACAP','TATACONSUM','TATAPOWER','TATASTEEL','TCS','TECHM','TITAN','TORNTPHARM','TRENT','TVSMOTOR','ULTRACEMCO','UNIONBANK','UNITDSPR','VBL','VEDL','WIPRO','ZYDUSLIFE']
+NIFTY100 = ['ABB','ADANIENSOL','ADANIENT','ADANIGREEN','ADANIPORTS','ADANIPOWER','AMBUJACEM','APOLLOHOSP','ASIANPAINT','AXISBANK','BAJAJ-AUTO','BAJAJFINSV','BAJAJHLDNG','BAJFINANCE','BANKBARODA','BEL','BHARTIARTL','BOSCHLTD','BPCL','BRITANNIA','CANBK','CGPOWER','CHOLAFIN','CIPLA','COALINDIA','CUMMINSIND','DIVISLAB','DLF','DMART','DRREDDY','EICHERMOT','ENRIN','ETERNAL','GAIL','GODREJCP','GRASIM','HAL','HCLTECH','HDFCAMC','HDFCBANK','HDFCLIFE','HINDALCO','HINDUNILVR','HINDZINC','HYUNDAI','ICICIBANK','INDHOTEL','INDIGO','INFY','IOC','IRFC','ITC','JINDALSTEL','JIOFIN','JSWSTEEL','KOTAKBANK','LODHA','LT','LTIM','M&M','MARUTI','MAXHEALTH','MAZDOCK','MOTHERSON','MUTHOOTFIN','NESTLEIND','NTPC','ONGC','PFC','PIDILITIND','PNB','POWERGRID','RECLTD','RELIANCE','SBILIFE','SBIN','SHREECEM','SHRIRAMFIN','SIEMENS','SOLARINDS','SUNPHARMA','TATACAP','TATACONSUM','TATAPOWER','TMCV','TMPV','TATASTEEL','TCS','TECHM','TITAN','TORNTPHARM','TRENT','TVSMOTOR','ULTRACEMCO','UNIONBANK','UNITDSPR','VBL','VEDL','WIPRO','ZYDUSLIFE']
 
 # Announced changes effective after the 29-Sep-2026 close. These are kept
 # separate so the scanner does not silently mix future constituents into the
@@ -34,13 +34,15 @@ SECTOR_HINTS={
 "MAXHEALTH":"Healthcare","MAZDOCK":"Industrials","MOTHERSON":"Automobile","MUTHOOTFIN":"Financial Services","NESTLEIND":"FMCG","NTPC":"Power","ONGC":"Oil Gas",
 "PFC":"Financial Services","PIDILITIND":"Chemicals","PNB":"Financial Services","POWERGRID":"Power","RECLTD":"Financial Services","RELIANCE":"Oil Gas",
 "SBILIFE":"Financial Services","SBIN":"Financial Services","SHREECEM":"Construction Materials","SHRIRAMFIN":"Financial Services","SIEMENS":"Industrials",
-"SOLARINDS":"Chemicals","SUNPHARMA":"Healthcare","TATACAP":"Financial Services","TATACONSUM":"FMCG","TATAPOWER":"Power","TATASTEEL":"Metals & Mining",
+"SOLARINDS":"Chemicals","SUNPHARMA":"Healthcare","TATACAP":"Financial Services","TATACONSUM":"FMCG","TATAPOWER":"Power","TMCV":"Automobile","TMPV":"Automobile","TATASTEEL":"Metals & Mining",
 "TCS":"IT","TECHM":"IT","TITAN":"Consumer","TORNTPHARM":"Healthcare","TRENT":"Consumer","TVSMOTOR":"Automobile","ULTRACEMCO":"Construction Materials",
 "UNIONBANK":"Financial Services","UNITDSPR":"Consumer","VBL":"FMCG","VEDL":"Metals & Mining","WIPRO":"IT","ZYDUSLIFE":"Healthcare"
 }
 
 def _ticker(symbol):
-    return yf.Ticker(symbol + ".NS")
+    # NSE index symbols such as ^NSEI already contain their own Yahoo symbol.
+    # Equity symbols need the .NS suffix.
+    return yf.Ticker(symbol if symbol.startswith("^") else symbol + ".NS")
 
 def _history(symbol, retries=2):
     last=None
@@ -190,10 +192,10 @@ def daily_scan(capital,risk_pct,min_score=75,min_rr=2.0,max_results=5):
     nifty_raw,_=_history("^NSEI")
     nifty=indicators(nifty_raw)
     if nifty.empty:
-        return {"rows":[],"qualified":[],"near":[],"generated_utc":datetime.now(timezone.utc).isoformat(),"breadth":{"scanned":0,"positive_20d":0,"breakouts":0,"qualified":0},"universe_size":len(NIFTY100),"regime":market_regime(nifty),"diagnostics":{"history_ok":0,"history_failed":len(NIFTY100),"fundamental_partial":0,"news_partial":0,"failures":[{"symbol":s,"stage":"benchmark","error":"NIFTY benchmark unavailable"} for s in NIFTY100]}}
+        return {"rows":[],"qualified":[],"near":[],"csv":"No analyzable stocks. Benchmark history unavailable.\n","generated_utc":datetime.now(timezone.utc).isoformat(),"breadth":{"scanned":0,"positive_20d":0,"breakouts":0,"qualified":0},"universe_size":len(NIFTY100),"regime":market_regime(nifty),"diagnostics":{"history_ok":0,"history_failed":len(NIFTY100),"fundamental_partial":0,"news_partial":0,"failures":[{"symbol":s,"stage":"benchmark","error":"NIFTY benchmark unavailable"} for s in NIFTY100]}}
     nifty_ret20=float(nifty.iloc[-1].Ret20)
     results=[]; failures=[]
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    with ThreadPoolExecutor(max_workers=4) as ex:
         futs={ex.submit(_analyze_one,s,capital,risk_pct,nifty_ret20):s for s in NIFTY100}
         for f in as_completed(futs):
             try:
